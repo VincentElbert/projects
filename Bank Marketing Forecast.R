@@ -1,278 +1,132 @@
-library(readr)
-
-x <-read_csv("C:/Users/vince/Desktop/task/ERG2050/bank-additional/bank-additional-full.csv")
-
 library(tidyr)
-data <- separate(x, col = "age;job;marital;education;default;housing;loan;contact;month;day_of_week;duration;campaign;pdays;previous;poutcome;emp.var.rate;cons.price.idx;cons.conf.idx;euribor3m;nr.employed;y",
+library(caret)
+
+setwd("C:/Users/vince/Desktop/task/1Old Tasks/ERG2050/bank-additional")
+data <-read.csv("bank-additional-full.csv")
+
+data <- separate(data, col = "age.job.marital.education.default.housing.loan.contact.month.day_of_week.duration.campaign.pdays.previous.poutcome.emp.var.rate.cons.price.idx.cons.conf.idx.euribor3m.nr.employed.y",
                  into =c("age","job","marital","education","default","housing","loan","contact","month","day_of_week","duration","campaign","pdays","previous","poutcome","emp.var.rate","cons.price.idx","cons.conf.idx","euribor3m","nr.employed","y"),
                  sep = ";")
 
-
-s2<-lapply(data, gsub, pattern="\\\\", replacement = "")
-s3 <- as.data.frame(s2)
-
-s4<-lapply(s3, gsub, pattern="\"", replacement = "")
-s5<- as.data.frame(s4)
-
-s5 <- s5[-grep("unknown", s5$education), ]
-s5 <- s5[-grep("unknown", s5$job), ]
-s5 <- s5[-grep("unknown", s5$housing), ]
-s5 <- s5[-grep("unknown", s5$marital), ]
-
-
-
-#library(dplyr)
-# baru <- s5 %>%
-#   select(- c("marital","housing","default","loan","contact","duration","pdays","previous","poutcome","nr.employed","emp.var.rate"))
+data <- data[-grep("unknown", data$education), ]
+data <- data[-grep("unknown", data$job), ]
+data <- data[-grep("unknown", data$housing), ]
+data <- data[-grep("unknown", data$marital), ]
 
 drop <- c("default","loan","duration","pdays","poutcome")
-baru <- s5[ ,!(names(s5) %in% drop)]
+data <- data[ ,!(names(data) %in% drop)]
 
+data["education"][data["education"] == "basic.6y"] <- 6
+data["education"][data["education"] == "basic.4y"] <- 4
+data["education"][data["education"] == "basic.9y"] <- 9
+data["education"][data["education"] == "university.degree"] <- 16
+data["education"][data["education"] == "high.school"] <- 12
+data["education"][data["education"] == "professional.course"] <- 17
 
+data["job"][data["job"] == "unemployed"] <- 1
+data["job"][data["job"] == "student"] <- 2
+data["job"][data["job"] == "housemaid"] <- 3
+data["job"][data["job"] == "services"] <- 4
+data["job"][data["job"] == "blue-collar"] <- 5
+data["job"][data["job"] == "self-employed"] <- 6
+data["job"][data["job"] == "technician"] <- 7
+data["job"][data["job"] == "admin."] <- 8
+data["job"][data["job"] == "management"] <- 9
+data["job"][data["job"] == "entrepreneur"] <- 10
+data["job"][data["job"] == "retired"] <- 11
 
-baru["education"][baru["education"] == "basic.6y"] <- 6
-baru["education"][baru["education"] == "basic.4y"] <- 4
-baru["education"][baru["education"] == "basic.9y"] <- 9
-baru["education"][baru["education"] == "university.degree"] <- 16
-baru["education"][baru["education"] == "high.school"] <- 12
-baru["education"][baru["education"] == "professional.course"] <- 17
+data["marital"][data["marital"] == "married"] <- 1
+data["marital"][data["marital"] == "single"] <- -1
+data["marital"][data["marital"] == "divorced"] <- 0
 
-baru["job"][baru["job"] == "unemployed"] <- 1
-baru["job"][baru["job"] == "student"] <- 2
-baru["job"][baru["job"] == "housemaid"] <- 3
-baru["job"][baru["job"] == "services"] <- 4
-baru["job"][baru["job"] == "blue-collar"] <- 5
-baru["job"][baru["job"] == "self-employed"] <- 6
-baru["job"][baru["job"] == "technician"] <- 7
-baru["job"][baru["job"] == "admin."] <- 8
-baru["job"][baru["job"] == "management"] <- 9
-baru["job"][baru["job"] == "entrepreneur"] <- 10
-baru["job"][baru["job"] == "retired"] <- 11
+data["month"][data["month"] == "jan"] <- 1
+data["month"][data["month"] == "feb"] <- 2
+data["month"][data["month"] == "mar"] <- 3
+data["month"][data["month"] == "apr"] <- 4
+data["month"][data["month"] == "may"] <- 5
+data["month"][data["month"] == "jun"] <- 6
+data["month"][data["month"] == "jul"] <- 7
+data["month"][data["month"] == "aug"] <- 8
+data["month"][data["month"] == "sep"] <- 9
+data["month"][data["month"] == "oct"] <- 10
+data["month"][data["month"] == "nov"] <- 11
+data["month"][data["month"] == "dec"] <- 12
 
-# baru["month"][baru["month"] == "jan"] <- 1
-# baru["month"][baru["month"] == "feb"] <- 2
-# baru["month"][baru["month"] == "mar"] <- 3
-# baru["month"][baru["month"] == "apr"] <- 4
-# baru["month"][baru["month"] == "may"] <- 5
-# baru["month"][baru["month"] == "jun"] <- 6
-# baru["month"][baru["month"] == "jul"] <- 7
-# baru["month"][baru["month"] == "aug"] <- 8
-# baru["month"][baru["month"] == "sep"] <- 9
-# baru["month"][baru["month"] == "oct"] <- 10
-# baru["month"][baru["month"] == "nov"] <- 11
-# baru["month"][baru["month"] == "dec"] <- 12
+data["day_of_week"][data["day_of_week"] == "mon"] <- 1
+data["day_of_week"][data["day_of_week"] == "tue"] <- 2
+data["day_of_week"][data["day_of_week"] == "wed"] <- 3
+data["day_of_week"][data["day_of_week"] == "thu"] <- 4
+data["day_of_week"][data["day_of_week"] == "fri"] <- 5
 
-baru$married <- as.numeric(baru["marital"]== "married")
-baru$single <- as.numeric(baru["marital"]== "single")
-baru$divorced <- as.numeric(baru["marital"]== "divorced")
+data["contact"][data["contact"] == "cellular"] <- 0
+data["contact"][data["contact"] == "telephone"] <- 1
 
+data["housing"][data["housing"] == "no"] <- 0
+data["housing"][data["housing"] == "yes"] <- 1
 
-baru$firstquarter <- as.numeric(baru["month"] == "jan" | baru["month"] == "feb" | baru["month"] == "mar")
-baru$secondquarter <- as.numeric(baru["month"] == "apr" | baru["month"] == "may" | baru["month"] == "jun")
-baru$thirdquarter <- as.numeric(baru["month"] == "jul" | baru["month"] == "aug" | baru["month"] == "sep")
-baru$fourthquarter <- as.numeric(baru["month"] == "oct" | baru["month"] == "nov" | baru["month"] == "dec")
+data["y"][data["y"] == "no"] <- 0
+data["y"][data["y"] == "yes"] <- 1
 
-# baru["day_of_week"][baru["day_of_week"] == "mon"] <- 1
-# baru["day_of_week"][baru["day_of_week"] == "tue"] <- 2
-# baru["day_of_week"][baru["day_of_week"] == "wed"] <- 3
-# baru["day_of_week"][baru["day_of_week"] == "thu"] <- 4
-# baru["day_of_week"][baru["day_of_week"] == "fri"] <- 5
+data$contact <- as.numeric(data$contact)
+data$nr.employed <- as.numeric(data$nr.employed)
+data$campaign <- as.numeric(data$campaign)
+data$job <- as.numeric(data$job)
+data$education <- as.numeric(data$education)
 
-baru$monday <- as.numeric(baru["day_of_week"] == "mon")
-baru$tuesday <- as.numeric(baru["day_of_week"] == "tue")
-baru$wednesday <- as.numeric(baru["day_of_week"] == "wed")
-baru$thursday <- as.numeric(baru["day_of_week"] == "thu")
-baru$friday <- as.numeric(baru["day_of_week"] == "fri")
+# Highly imbalanced data
+yes <- which(data["y"] == 1)
+no <- which(data["y"] == 0)
+length(yes)
+length(no)
 
-baru["y"][baru["y"] == "no"] <- 0
-baru["y"][baru["y"] == "yes"] <- 1
+# A combination of down-sampling and up-sampling
+yes_upsample <- sample(yes, length(no)/2, replace = TRUE)
+no_downsample <- sample(no, length(yes_upsample))
+dataset <- data[c(yes_upsample, no_downsample),]
 
-baru["housing"][baru["housing"] == "no"] <- 0
-baru["housing"][baru["housing"] == "yes"] <- 1
+dataset$housing <- as.numeric(dataset$housing)
+dataset$age <- as.numeric(dataset$age)
+dataset$campaign <- as.numeric(dataset$campaign)
+dataset$previous <- as.numeric(dataset$previous)
+dataset$emp.var.rate <- as.numeric(dataset$emp.var.rate)
+dataset$cons.price.idx <- as.numeric(dataset$cons.price.idx)
+dataset$cons.conf.idx <- as.numeric(dataset$cons.conf.idx)
+dataset$euribor3m <- as.numeric(dataset$euribor3m)
+dataset$y <- as.factor(dataset$y)
 
-baru["contact"][baru["contact"] == "cellular"] <- 0
-baru["contact"][baru["contact"] == "telephone"] <- 1
+length(which(dataset["y"] == 1))
+length(which(dataset["y"] == 0))
 
-
-baru$housing <- as.numeric(baru$housing)
-baru$contact <- as.numeric(baru$contact)
-baru$emp.var.rate <- as.numeric(baru$emp.var.rate)
-baru$nr.employed <- as.numeric(baru$nr.employed)
-baru$previous <- as.numeric(baru$previous)
-baru$campaign <- as.numeric(baru$campaign)
-baru$age <- as.numeric(baru$age)
-baru$job <- as.numeric(baru$job)
-baru$education <- as.numeric(baru$education)
-baru$campaign <- as.numeric(baru$campaign)
-baru$cons.price.idx <- as.numeric(baru$cons.price.idx)
-baru$cons.conf.idx <- as.numeric(baru$cons.conf.idx)
-baru$euribor3m <- as.numeric(baru$euribor3m)
-baru$y <- as.factor(baru$y)
-
-colSums(is.na(baru))
-baru <- na.omit(baru)
-#baru$education[is.na(baru$education)] <- 0
-colSums(is.na(baru))
-
-baru <- baru[,-c(3,7,8)]
-
-
-SMOTE <- function(form,data,
-                  perc.over=200,k=5,
-                  perc.under=200,
-                  learner=NULL,...
-)
-  
-  # INPUTS:
-  # form a model formula
-  # data the original training set (with the unbalanced distribution)
-  # minCl  the minority class label
-  # per.over/100 is the number of new cases (smoted cases) generated
-  #              for each rare case. If perc.over < 100 a single case
-  #              is generated uniquely for a randomly selected perc.over
-  #              of the rare cases
-  # k is the number of neighbours to consider as the pool from where
-  #   the new examples are generated
-# perc.under/100 is the number of "normal" cases that are randomly
-#                selected for each smoted case
-# learner the learning system to use.
-# ...  any learning parameters to pass to learner
-{
-  
-  # the column where the target variable is
-  tgt <- which(names(data) == as.character(form[[2]]))
-  minCl <- levels(data[,tgt])[which.min(table(data[,tgt]))]
-  
-  # get the cases of the minority class
-  minExs <- which(data[,tgt] == minCl)
-  
-  # generate synthetic cases from these minExs
-  if (tgt < ncol(data)) {
-    cols <- 1:ncol(data)
-    cols[c(tgt,ncol(data))] <- cols[c(ncol(data),tgt)]
-    data <-  data[,cols]
-  }
-  newExs <- smote.exs(data[minExs,],ncol(data),perc.over,k)
-  if (tgt < ncol(data)) {
-    newExs <- newExs[,cols]
-    data <- data[,cols]
-  }
-  
-  # get the undersample of the "majority class" examples
-  selMaj <- sample((1:NROW(data))[-minExs],
-                   as.integer((perc.under/100)*nrow(newExs)),
-                   replace=T)
-  
-  # the final data set (the undersample+the rare cases+the smoted exs)
-  newdataset <- rbind(data[selMaj,],data[minExs,],newExs)
-  
-  # learn a model if required
-  if (is.null(learner)) return(newdataset)
-  else do.call(learner,list(form,newdataset,...))
-}
-
-
-
-# ===================================================
-# Obtain a set of smoted examples for a set of rare cases.
-# L. Torgo, Feb 2010
-# ---------------------------------------------------
-smote.exs <- function(data,tgt,N,k)
-  # INPUTS:
-  # data are the rare cases (the minority "class" cases)
-  # tgt is the name of the target variable
-  # N is the percentage of over-sampling to carry out;
-  # and k is the number of nearest neighours to use for the generation
-  # OUTPUTS:
-  # The result of the function is a (N/100)*T set of generated
-  # examples with rare values on the target
-{
-  nomatr <- c()
-  T <- matrix(nrow=dim(data)[1],ncol=dim(data)[2]-1)
-  for(col in seq.int(dim(T)[2]))
-    if (class(data[,col]) %in% c('factor','character')) {
-      T[,col] <- as.integer(data[,col])
-      nomatr <- c(nomatr,col)
-    } else T[,col] <- data[,col]
-  
-  if (N < 100) { # only a percentage of the T cases will be SMOTEd
-    nT <- NROW(T)
-    idx <- sample(1:nT,as.integer((N/100)*nT))
-    T <- T[idx,]
-    N <- 100
-  }
-  
-  p <- dim(T)[2]
-  nT <- dim(T)[1]
-  
-  ranges <- apply(T,2,max)-apply(T,2,min)
-  
-  nexs <-  as.integer(N/100) # this is the number of artificial exs generated
-  # for each member of T
-  new <- matrix(nrow=nexs*nT,ncol=p)    # the new cases
-  
-  for(i in 1:nT) {
-    
-    # the k NNs of case T[i,]
-    xd <- scale(T,T[i,],ranges)
-    for(a in nomatr) xd[,a] <- xd[,a]==0
-    dd <- drop(xd^2 %*% rep(1, ncol(xd)))
-    kNNs <- order(dd)[2:(k+1)]
-    
-    for(n in 1:nexs) {
-      # select randomly one of the k NNs
-      neig <- sample(1:k,1)
-      
-      ex <- vector(length=ncol(T))
-      
-      # the attribute values of the generated case
-      difs <- T[kNNs[neig],]-T[i,]
-      new[(i-1)*nexs+n,] <- T[i,]+runif(1)*difs
-      for(a in nomatr)
-        new[(i-1)*nexs+n,a] <- c(T[kNNs[neig],a],T[i,a])[1+round(runif(1),0)]
-      
-    }
-  }
-  newCases <- data.frame(new)
-  for(a in nomatr)
-    newCases[,a] <- factor(newCases[,a],levels=1:nlevels(data[,a]),labels=levels(data[,a]))
-  
-  newCases[,tgt] <- factor(rep(data[1,tgt],nrow(newCases)),levels=levels(data[,tgt]))
-  colnames(newCases) <- colnames(data)
-  newCases
-}
-
-baru <- SMOTE(form = y~.,data = baru, k = 5, perc.over = 100, perc.under = 200)
-
-#assigning train and test data
-library(caret)
 set.seed(1)
-data_index <- createDataPartition(baru$y, p = 0.8, list = FALSE)
-train_data <- baru[data_index, ]
-test_data <- baru[-data_index, ]
-train_y <- baru[data_index, 10]
-test_y <- baru[-data_index, 10]
-# train_attributes <- baru[data_index, c(1:3,6:9,11:13,15:18)]
-# test_attributes <- baru[-data_index, c(1:3,6:9,11:13,15:18)]
-train_attributes <- baru[data_index, c(1:7,9:11,13:16)]
-test_attributes <- baru[-data_index, c(1:7,9:11,13:16)]
+data_index <- createDataPartition(dataset$y, p = 0.8, list = FALSE)
+train_data <- dataset[data_index, ]
+test_data <- dataset[-data_index, ]
+
+train_data <- na.omit(train_data)
+test_data <- na.omit(test_data)
+
+train_y <- train_data[, ncol(train_data)]
+test_y <- test_data[, ncol(test_data)]
+
+train_attributes <- train_data[, 1:(ncol(train_data)-1)]
+test_attributes <- test_data[, 1:(ncol(test_data)-1)]
 
 #TEST KNN
 library(class)
 set.seed(1)
-x <- 1:50
-acc_knn <- rep(0,50)
+x <- 1:20
+acc_knn <- rep(0,20)
 for (i in x){
-  knn_pred <- knn(train_data, train_data, train_y, k = i)
+  knn_pred <- knn(train_attributes, train_attributes, train_y, k = i)
   conf_matrix <- table(knn_pred, train_y)
   acc_knn[i] <- (conf_matrix[1,1] + conf_matrix[2,2])/sum(conf_matrix)
 }
-plot<- ggplot() + geom_line(aes(x,acc_knn))+scale_x_continuous(breaks =seq(0,50,by=1))
+plot <- ggplot() + geom_line(aes(x,acc_knn)) + scale_x_continuous(breaks =seq(0,50,by=1))
 plot
 
 #best knn
 set.seed(1)
-best_knn <- knn(train_data, test_data, train_y, k = 3)
+best_knn <- knn(train_data, test_data, train_y, k = 4)
 table <- table(best_knn, test_y)
 (accuracy_knn <- sum(diag(table))/sum(table))
 print("precision")
@@ -281,7 +135,6 @@ print("recall")
 (recall <- table[2,2]/sum(table[1,2],table[2,2]))
 print("F1")
 (2*((prec*recall)/(prec+recall)))
-
 
 #Logistic regression
 library(boot)
@@ -332,17 +185,6 @@ lda_pred <- predict(lda_model, test_data)
 lda_matrix <- table(lda_pred$class, test_y)
 lda_matrix
 (lda_matrix[1,1] + lda_matrix[2,2])/sum(lda_matrix)
-
-
-#QDA
-set.seed(1)
-qda_model <- qda(y ~., data = train_data)
-summary(qda_model)
-qda_pred <- predict(qda_model, test_data)
-qda_matrix <- table(qda_pred$class, test_y)
-qda_matrix
-(qda_matrix[1,1] + qda_matrix[2,2])/sum(qda_matrix)
-
 
 #Naive Bayes
 library(e1071)
@@ -424,11 +266,11 @@ svm_model_polynomial <- svm(y~., data = train_data, cost = 1,
                             kernel = "polynomial", scale= TRUE)
 summary(svm_model)
 
-svm_tune <- tune(svm, y~., data = train_data, kernel = "polynomial",
+svm_tune_polynomial <- tune(svm, y~., data = train_data, kernel = "polynomial",
                  ranges = list(cost = 10^seq(-2,1, by=0.25)), scale= TRUE)
 summary(svm_tune)
 
-svm_after_tuned <- svm(y~., data = train_data, kernel = "polynomial", 
+svm_after_tuned_polynomial <- svm(y~., data = train_data, kernel = "polynomial", 
                        cost = svm_tune$best.parameters$cost)
 pred <- predict(svm_after_tuned, test_data)
 (poly_matrix <- table(test_data$y, pred))
